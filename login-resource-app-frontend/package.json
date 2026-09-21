@@ -4,7 +4,7 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "ng build --prod",
+    "build": "npx ng build --configuration production",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },
@@ -22,7 +22,7 @@
   },
   "devDependencies": {
     "@angular/build": "^22.1.6",
-    "@angular/cli": "^22.1.6",
+    "@angular/cli": "^22.1.8",
     "@angular/compiler-cli": "^22.1.0",
     "jsdom": "^28.0.0",
     "prettier": "^3.8.1",
