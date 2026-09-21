@@ -1,0 +1,185 @@
+<div class="page-container">
+  <h2>Task Master Page</h2>
+
+  <div class="panel">
+    <button class="add-btn" (click)="openTaskPopup()">+ Add Task</button>
+
+    <div class="overlay" *ngIf="showTaskPopup">
+      <div class="popup">
+        <h3>{{ editingTaskId ? 'Edit Task' : 'Add New Task' }}</h3>
+
+        <div class="form-group">
+          <label>Task Name:</label>
+          <input [(ngModel)]="newTaskName" placeholder="Enter task name" />
+        </div>
+
+        <div class="form-group">
+          <label>Task ID:</label>
+          <input [(ngModel)]="newTaskCode" placeholder="Enter unique task ID" />
+        </div>
+
+        <div class="form-group">
+          <label>Resource Person:</label>
+          <select [(ngModel)]="newAssignedResourceId">
+            <option [ngValue]="null" disabled>Select the resource person</option>
+            <option *ngFor="let r of resources()" [ngValue]="r.id">{{ r.name }} ({{ r.nameId }})</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Vertical:</label>
+          <select [(ngModel)]="newVehicle">
+            <option value="" disabled>Select vertical</option>
+            <option value="AI/ML">AI/ML</option>
+            <option value="DS">DS</option>
+            <option value="Development">Development</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Weather Regulations:</label>
+          <select [(ngModel)]="newWeatherRegulations">
+            <option value="" disabled>Select frequency</option>
+            <option value="Weekly">Weekly</option>
+            <option value="Monthly">Monthly</option>
+            <option value="Daily">Daily</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>From:</label>
+          <input type="date" [(ngModel)]="newFromDate"
+                 [min]="isEditingExistingTask ? null : minTaskDate()"
+                 [disabled]="isEditingExistingTask" />
+          <small class="hint" *ngIf="isEditingExistingTask">
+            The From date is locked once a task is created - only the To date can be changed here.
+          </small>
+        </div>
+
+        <div class="form-group">
+          <label>To:</label>
+          <input type="date" [(ngModel)]="newToDate" [min]="newFromDate || minTaskDate()" />
+        </div>
+
+        <div class="form-group">
+          <label>Disabled Dates:</label>
+          <small class="hint">Sundays are always disabled for reporting. Add any extra dates to block (holidays, leave, etc.).</small>
+          <div class="disabled-dates-add">
+            <input type="date" [(ngModel)]="newDisabledDateInput"
+                   [min]="newFromDate || minTaskDate()" [max]="newToDate || null" />
+            <button type="button" class="save-btn" (click)="addDisabledDate()">Add</button>
+          </div>
+          <p *ngIf="disabledDateError" class="error">{{ disabledDateError }}</p>
+          <ul class="disabled-dates-list" *ngIf="newDisabledDates.length">
+            <li *ngFor="let d of newDisabledDates">
+              {{ d }}
+              <button type="button" class="cancel-btn" (click)="removeDisabledDate(d)">Remove</button>
+            </li>
+          </ul>
+          <small class="hint" *ngIf="!newDisabledDates.length">No extra dates blocked yet.</small>
+        </div>
+
+        <p *ngIf="taskErrorMessage()" class="error">{{ taskErrorMessage() }}</p>
+
+        <div class="popup-actions">
+          <button class="save-btn" (click)="saveTask()">Save</button>
+          <button class="cancel-btn" (click)="cancelTaskPopup()">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <p *ngIf="taskErrorMessage() && !showTaskPopup" class="error">{{ taskErrorMessage() }}</p>
+    <p *ngIf="loadingTasks()">Loading tasks...</p>
+
+    <table class="resource-table task-table" *ngIf="tasks().length > 0">
+      <thead>
+        <tr>
+          <th>
+            <div class="th-filter">
+              <span>Task Name</span>
+              <select [ngModel]="filterTaskName()" (ngModelChange)="onFilterTaskNameChange($event)">
+                <option value="">All</option>
+                <option *ngFor="let t of taskNameFilterOptions()" [value]="t">{{ t }}</option>
+              </select>
+            </div>
+          </th>
+          <th>Task ID</th>
+          <th>
+            <div class="th-filter">
+              <span>Resource Person</span>
+              <select [ngModel]="filterResourceNameId()" (ngModelChange)="onFilterResourceChange($event)">
+                <option value="">All</option>
+                <option *ngFor="let r of resourceFilterOptions()" [value]="r.nameId">{{ r.name }} ({{ r.nameId }})</option>
+              </select>
+            </div>
+          </th>
+          <th>Vertical</th>
+          <th>Weather Regulations</th>
+          <th>
+            <div class="th-filter">
+              <span>From</span>
+              <select [ngModel]="filterMonth()" (ngModelChange)="onFilterMonthChange($event)">
+                <option value="">All Months</option>
+                <option value="current">Current Month</option>
+                <option *ngFor="let m of monthFilterOptions()" [value]="m">{{ m }}</option>
+              </select>
+              <select [ngModel]="sortOrder()" (ngModelChange)="onSortOrderChange($event)">
+                <option value="asc">Sort: Oldest first</option>
+                <option value="desc">Sort: Newest first</option>
+              </select>
+            </div>
+          </th>
+          <th>To</th>
+          <th>Period</th>
+          <th>
+            <div class="th-filter">
+              <span>Work Status</span>
+              <select [ngModel]="filterStatus()" (ngModelChange)="onFilterStatusChange($event)">
+                <option value="">All</option>
+                <option value="pending">Pending</option>
+                <option value="completed">Completed</option>
+              </select>
+            </div>
+          </th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let t of filteredTasksForAdmin()">
+          <td>{{ t.taskName }}</td>
+          <td>{{ t.taskCode }}</td>
+          <td>{{ t.assignedResourceName || '-' }}{{ t.assignedResourceNameId ? ' (' + t.assignedResourceNameId + ')' : '' }}</td>
+          <td>{{ t.vehicle || '-' }}</td>
+          <td>{{ t.weatherRegulations || '-' }}</td>
+          <td>{{ t.fromDate }}</td>
+          <td>{{ t.toDate }}<br *ngIf="t.disabledDates?.length" /><small class="hint" *ngIf="t.disabledDates?.length">{{ t.disabledDates?.length }} extra date(s) blocked</small></td>
+          <td>
+            <span [class.status-active]="t.withinAllocatedPeriod" [class.status-inactive]="!t.withinAllocatedPeriod">
+              {{ t.withinAllocatedPeriod ? 'Active' : 'Closed' }}
+            </span>
+          </td>
+          <td>
+            <button type="button"
+                    class="completion-btn"
+                    [class.completed]="t.completed"
+                    [class.pending]="!t.completed"
+                    (click)="toggleCompletion(t)">
+              {{ t.completed ? '✓ Completed' : '⏳ Pending' }}
+            </button>
+          </td>
+          <td class="task-actions">
+            <button class="save-btn" (click)="openTaskPopup(t)">Edit</button>
+            <button class="cancel-btn" (click)="deleteTask(t.id)">Delete</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="filter-summary" *ngIf="hasActiveFilters()">
+      <button type="button" class="cancel-btn" (click)="clearAllFilters()">Clear Filters</button>
+    </div>
+
+    <p *ngIf="!loadingTasks() && tasks().length === 0">No tasks added yet.</p>
+    <p *ngIf="!loadingTasks() && tasks().length > 0 && filteredTasksForAdmin().length === 0">No tasks match the selected filters.</p>
+  </div>
+</div>

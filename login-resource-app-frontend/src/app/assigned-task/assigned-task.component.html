@@ -1,0 +1,48 @@
+<div class="page-container">
+  <h2>Assigned Task</h2>
+  <p class="hint">Tasks the admin has allocated to you, {{ resourceName }}.</p>
+
+  <p *ngIf="errorMessage()" class="error">{{ errorMessage() }}</p>
+  <p *ngIf="loading()">Loading your assigned tasks...</p>
+
+  <div class="panel">
+    <table class="data-table" *ngIf="myTasks().length > 0">
+      <thead>
+        <tr>
+          <th>Task Name</th>
+          <th>Task ID</th>
+          <th>Vertical</th>
+          <th>Weather Regulations</th>
+          <th>From</th>
+          <th>To</th>
+          <th>Period</th>
+          <th>Work Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let t of myTasks()">
+          <td>{{ t.taskName }}</td>
+          <td>{{ t.taskCode }}</td>
+          <td>{{ t.vehicle || '-' }}</td>
+          <td>{{ t.weatherRegulations || '-' }}</td>
+          <td>{{ t.fromDate }}</td>
+          <td>{{ t.toDate }}</td>
+          <td>
+            <span [class.status-active]="t.withinAllocatedPeriod" [class.status-inactive]="!t.withinAllocatedPeriod">
+              {{ t.withinAllocatedPeriod ? 'Active' : 'Closed' }}
+            </span>
+          </td>
+          <td>
+            <span [class.status-active]="t.completed" [class.status-inactive]="!t.completed">
+              {{ t.completed ? 'Completed' : 'Pending' }}
+            </span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p *ngIf="!loading() && myTasks().length === 0">No tasks have been allocated to you yet.</p>
+  </div>
+
+  <p class="hint">To log hours against an active task, go to <strong>Report Task</strong> in the sidebar.</p>
+</div>

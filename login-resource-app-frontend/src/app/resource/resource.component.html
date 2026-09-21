@@ -1,0 +1,78 @@
+<div class="page-container">
+  <h2>Resource Page</h2>
+
+  <div class="panel">
+    <button class="add-btn" (click)="openPopup()">+ Add Resource</button>
+
+    <div class="overlay" *ngIf="showPopup">
+      <div class="popup">
+        <h3>Add New Resource</h3>
+
+        <div class="form-group">
+          <label>Name ID:</label>
+          <input [(ngModel)]="newNameId" placeholder="Enter unique ID (e.g. R1001)" />
+          <small class="hint">This becomes the resource person's login username.</small>
+        </div>
+
+        <div class="form-group">
+          <label>Name:</label>
+          <input [(ngModel)]="newName" placeholder="Enter name" />
+        </div>
+
+        <div class="form-group">
+          <label>Role:</label>
+          <input [(ngModel)]="newRole" placeholder="Enter role" />
+        </div>
+
+        <p *ngIf="errorMessage()" class="error">{{ errorMessage() }}</p>
+
+        <div class="popup-actions">
+          <button class="save-btn" (click)="saveResource()">Save</button>
+          <button class="cancel-btn" (click)="cancel()">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <p *ngIf="errorMessage() && !showPopup" class="error">{{ errorMessage() }}</p>
+    <p *ngIf="loading()">Loading resources...</p>
+
+    <div class="filter-bar" *ngIf="resources().length > 0">
+      <label for="role-filter">Filter by Role:</label>
+      <select id="role-filter" [ngModel]="selectedRole()" (ngModelChange)="onRoleFilterChange($event)">
+        <option value="">All Roles</option>
+        <option *ngFor="let role of roleOptions()" [value]="role">{{ role }}</option>
+      </select>
+      <button type="button" class="cancel-btn" *ngIf="selectedRole()" (click)="clearRoleFilter()">Clear Filter</button>
+    </div>
+
+    <table class="resource-table" *ngIf="pagedResources().length > 0">
+      <thead>
+        <tr>
+          <th>S.No</th>
+          <th>Name ID (Username)</th>
+          <th>Name</th>
+          <th>Role</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let res of pagedResources(); let i = index">
+          <td>{{ (currentPage() - 1) * pageSize + i + 1 }}</td>
+          <td>{{ res.nameId }}</td>
+          <td>{{ res.name }}</td>
+          <td>{{ res.role }}</td>
+          <td><button class="cancel-btn" (click)="deleteResource(res.id)">Delete</button></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="pagination-bar" *ngIf="filteredResources().length > pageSize">
+      <button type="button" class="save-btn" [disabled]="currentPage() === 1" (click)="prevPage()">Previous</button>
+      <span class="page-indicator">Page {{ currentPage() }} of {{ totalPages() }}</span>
+      <button type="button" class="save-btn" [disabled]="currentPage() === totalPages()" (click)="nextPage()">Next</button>
+    </div>
+
+    <p *ngIf="!loading() && resources().length === 0">No resources added yet.</p>
+    <p *ngIf="!loading() && resources().length > 0 && filteredResources().length === 0">No resources match the selected role.</p>
+  </div>
+</div>

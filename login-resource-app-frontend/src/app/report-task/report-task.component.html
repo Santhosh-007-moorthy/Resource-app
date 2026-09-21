@@ -1,0 +1,196 @@
+<div class="page-container">
+  <h2>Report Task</h2>
+  <p class="hint">Log your hours against one of your own assigned tasks, {{ resourceName }}.</p>
+
+  <p *ngIf="errorMessage()" class="error">{{ errorMessage() }}</p>
+  <p *ngIf="loading()">Loading...</p>
+
+  <div class="panel">
+    <!-- Task selection (decides which dates are pickable below) -->
+    <div class="assignment-form">
+      <div class="form-group">
+        <label>Task:</label>
+        <select [(ngModel)]="selectedTaskName" (ngModelChange)="onTaskSelected($event)">
+          <option value="" disabled selected>Select task</option>
+          <option *ngFor="let t of myTasks()" [value]="t.taskName" [disabled]="t.completed">
+            {{ t.taskName }}{{ t.completed ? ' (Completed)' : '' }}
+          </option>
+        </select>
+        <small class="hint" *ngIf="myTasks().length === 0">
+          No tasks have been allocated to you yet.
+        </small>
+        <small class="hint" *ngIf="selectedTaskName && !selectedTaskIsWithinPeriod()">
+          This task's allocated period is closed - entries can be viewed but not added.
+        </small>
+        <small class="hint" *ngIf="selectedTaskName && selectedTaskIsWithinPeriod() && selectedTaskIsCompleted()">
+          This task has been marked Completed by the admin - entries can be viewed but not added.
+        </small>
+      </div>
+
+      <div class="form-group">
+        <label>Task ID:</label><span class="task-id-display">{{ selectedTaskId }}</span>
+      </div>
+
+      <div class="form-group" *ngIf="selectedTaskId">
+        <label>Work Status:</label>
+        <span [class.status-active]="selectedTaskIsCompleted()" [class.status-inactive]="!selectedTaskIsCompleted()">
+          {{ selectedTaskIsCompleted() ? 'Completed' : 'Pending' }}
+        </span>
+      </div>
+    </div>
+
+    <!-- Month/Year + Calendar -->
+    <div class="assignment-form" style="align-items: center;" *ngIf="selectedTaskId">
+      <div class="form-group">
+        <label>Year:</label>
+        <select [(ngModel)]="selectedYear" (ngModelChange)="onYearSelected()">
+          <option [ngValue]="null" disabled selected>Select year</option>
+          <option *ngFor="let y of allowedYears()" [ngValue]="y">{{ y }}</option>
+        </select>
+      </div>
+
+      <div class="form-group" *ngIf="selectedYear">
+        <label>Month:</label>
+        <select [(ngModel)]="selectedMonth" (ngModelChange)="updateCalendarRange()">
+          <option value="" disabled selected>Select month</option>
+          <option *ngFor="let m of allowedMonthsForSelectedYear()" [value]="m">{{ m }}</option>
+        </select>
+      </div>
+
+      <div class="form-group calendar-group" *ngIf="calendarDays.length">
+        <label>Select Date:</label>
+        <div class="calendar-grid">
+          <button
+            type="button"
+            *ngFor="let day of calendarDays"
+            class="calendar-day"
+            [class.selected]="isSelectedDay(day)"
+            [class.full]="dayInfo(day).isFull"
+            [class.blocked]="dayInfo(day).isBlocked"
+            [disabled]="dayInfo(day).isFull || dayInfo(day).isBlocked"
+            [title]="dayInfo(day).isBlocked ? dayInfo(day).blockedReason : (dayInfo(day).isFull ? '8/8 hrs logged - full' : dayInfo(day).hoursRemaining + ' hr(s) remaining')"
+            (click)="selectDay(day)">
+            <span class="day-number">{{ day }}</span>
+            <span class="day-sub" *ngIf="dayInfo(day).isBlocked">{{ dayInfo(day).blockedReason }}</span>
+            <span class="day-sub" *ngIf="!dayInfo(day).isBlocked && dayInfo(day).isFull">Full</span>
+            <span class="day-sub" *ngIf="!dayInfo(day).isBlocked && !dayInfo(day).isFull">{{ dayInfo(day).hoursRemaining }}h left</span>
+          </button>
+        </div>
+        <small class="hint">
+          Grey dates are Sundays or admin-disabled for this task. Blue dates already have 8/8 hrs logged.
+        </small>
+      </div>
+      <small class="hint" *ngIf="selectedMonth && !calendarDays.length">No dates available in this month for this task.</small>
+    </div>
+    <p class="hint" *ngIf="!selectedTaskId && myTasks().length">Select a task above to choose a date within its allocated period.</p>
+
+    <!-- Hours + Remarks -->
+    <div class="assignment-form">
+      <div class="form-group">
+        <label>Hours Worked:</label>
+        <div class="hours-stepper">
+          <button type="button" class="stepper-btn" (click)="decrementHours()" [disabled]="workedHours <= 1">−</button>
+          <span class="hours-value">{{ workedHours }}</span>
+          <button type="button" class="stepper-btn" (click)="incrementHours()" [disabled]="workedHours >= 8">+</button>
+        </div>
+        <p class="hint">Max 8 hours per day</p>
+      </div>
+
+      <div class="form-group">
+        <label>Remarks:</label>
+        <textarea [(ngModel)]="remarks" rows="4" cols="50" maxlength="25000"></textarea>
+        <p class="hint">Limit: 5000 words (~25,000 characters)</p>
+      </div>
+    </div>
+
+    <button class="save-btn" type="button" (click)="saveTask()" [disabled]="!!selectedTaskName && !selectedTaskIsOpen()">Save Task</button>
+  </div>
+
+  <!-- Result Table -->
+  <div class="panel">
+    <h3>Saved Tasks{{ resourceName ? ' for ' + resourceName : '' }}</h3>
+
+    <div class="filter-bar" *ngIf="assignments().length > 0">
+      <div class="form-group">
+        <label>Filter Month:</label>
+        <select [ngModel]="filterMonth()" (ngModelChange)="onFilterMonthChange($event)">
+          <option value="">All Months</option>
+          <option *ngFor="let m of months" [value]="m">{{ m }}</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Filter Task:</label>
+        <select [ngModel]="filterTask()" (ngModelChange)="onFilterTaskChange($event)">
+          <option value="">All Tasks</option>
+          <option *ngFor="let t of taskFilterOptions()" [value]="t">{{ t }}</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Filter Year:</label>
+        <select [ngModel]="filterYear()" (ngModelChange)="onFilterYearChange($event)">
+          <option [ngValue]="null">All Years</option>
+          <option *ngFor="let y of years" [ngValue]="y">{{ y }}</option>
+        </select>
+      </div>
+
+      <button type="button" class="cancel-btn"
+              *ngIf="filterMonth() || filterTask() || filterYear() !== null"
+              (click)="clearTableFilters()">Clear Filters</button>
+    </div>
+
+    <table class="data-table" *ngIf="assignments().length > 0">
+      <thead>
+        <tr>
+          <th>S.No</th>
+          <th>Resource ID</th>
+          <th>Resource</th>
+          <th>Task</th>
+          <th>Task ID</th>
+          <th>Date</th>
+          <th>Hours</th>
+          <th>Remarks</th>
+          <th>Work Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let a of pagedAssignments(); let i = index">
+          <td>{{ (currentPage() - 1) * pageSize + i + 1 }}</td>
+          <td>{{ a.resourceNameId }}</td>
+          <td>{{ a.resourceName }}</td>
+          <td>{{ a.taskName }}</td>
+          <td>{{ a.taskCode }}</td>
+          <td>{{ a.date }}</td>
+          <td>{{ a.hours }}</td>
+          <td>{{ a.remarks }}</td>
+          <td>
+            <span [class.status-active]="isTaskCompleted(a.taskCode)" [class.status-inactive]="!isTaskCompleted(a.taskCode)">
+              {{ isTaskCompleted(a.taskCode) ? 'Completed' : 'Pending' }}
+            </span>
+          </td>
+          <td>
+            <button class="cancel-btn" (click)="deleteAssignment(a)" [disabled]="!canDeleteAssignment(a)"
+                    [title]="canDeleteAssignment(a) ? '' : (isTaskCompleted(a.taskCode) ? 'This task has been marked Completed' : (!isTaskOpenForEntry(a.taskCode) ? 'This task\'s allocated period is closed' : 'Only current/previous month entries can be deleted'))">
+              Delete
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="pagination-bar" *ngIf="filteredAssignments().length > pageSize">
+      <button type="button" class="save-btn" [disabled]="currentPage() === 1" (click)="prevPage()">Previous</button>
+      <span class="page-indicator">Page {{ currentPage() }} of {{ totalPages() }}</span>
+      <button type="button" class="save-btn" [disabled]="currentPage() === totalPages()" (click)="nextPage()">Next</button>
+    </div>
+
+    <p *ngIf="!loading() && assignments().length === 0">No tasks saved yet.</p>
+    <p *ngIf="assignments().length > 0 && filteredAssignments().length === 0">No saved tasks match the selected filters.</p>
+
+    <div class="download-bar" *ngIf="filteredAssignments().length > 0">
+      <button type="button" class="add-btn" (click)="downloadCsv()">⬇ Download CSV</button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,34 @@
+<aside class="sidebar">
+  <div class="sidebar-greeting">
+    <div class="avatar">{{ initial }}</div>
+    <h3>Hi, {{ greetingName }}</h3>
+    <span class="role-badge">{{ isAdmin ? 'Administrator' : 'Resource Person' }}</span>
+  </div>
+
+  <nav class="sidebar-nav">
+    <ng-container *ngIf="isAdmin">
+      <a routerLink="/resources" routerLinkActive="active">
+        <span class="nav-icon">🗂️</span> Resource Page
+      </a>
+      <a routerLink="/task-master" routerLinkActive="active">
+        <span class="nav-icon">📋</span> Task Master Page
+      </a>
+      <a routerLink="/records" routerLinkActive="active">
+        <span class="nav-icon">📊</span> Records Page
+      </a>
+    </ng-container>
+
+    <ng-container *ngIf="!isAdmin">
+      <a routerLink="/assigned-task" routerLinkActive="active">
+        <span class="nav-icon">📌</span> Assigned Task
+      </a>
+      <a routerLink="/report-task" routerLinkActive="active">
+        <span class="nav-icon">📝</span> Report Task
+      </a>
+    </ng-container>
+  </nav>
+
+  <button class="logout-btn" type="button" (click)="logout()">
+    <span class="nav-icon">🔑</span> Logout
+  </button>
+</aside>

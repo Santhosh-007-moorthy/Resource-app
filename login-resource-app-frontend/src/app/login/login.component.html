@@ -1,0 +1,41 @@
+<body style="background: lightgray;">
+<div class="login-container" >
+        <h2 style="text-align: center; font-family: 'Times New Roman', Times, serif; font-size: 30px;">Login</h2>
+
+        <!-- Username -->
+        <div class="form-group">
+          <label for="username" style=" font-family: 'Times New Roman', Times, serif; font-size: 25px;">Username:</label>
+          <input id="username"
+                type="text"
+                [(ngModel)]="username"
+                name="username"
+                required />
+          <small class="hint">Admin: your admin username. Resource person: your Name ID, as added by the admin.</small>
+        </div>
+
+        <!-- Password -->
+        <div class="form-group">
+          <label for="password" style=" font-family: 'Times New Roman', Times, serif; font-size: 25px;">Password:</label>
+          <div class="password-wrapper">
+            <input id="password"
+                  [type]="showPassword ? 'text' : 'password'"
+                  [(ngModel)]="password"
+                  name="password"
+                  required
+                  minlength="6" />
+            <span class="toggle-icon" (click)="togglePassword()">
+              {{ showPassword ? '🙈' : '👁️' }}
+            </span>
+          </div>
+          <small class="hint">Resource people: use the shared password given to you by the admin.</small>
+        </div>
+
+        <!-- Login Button -->
+        <div class="form-group">
+          <button (click)="onLogin()" [disabled]="loading()">{{ loading() ? 'Logging in...' : 'Login' }}</button>
+        </div>
+
+        <!-- Error Message -->
+        <p *ngIf="errorMessage()" class="error">{{ errorMessage() }}</p>
+      </div>
+</body>

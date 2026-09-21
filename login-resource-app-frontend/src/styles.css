@@ -1,0 +1,10 @@
+/* You can add global styles to this file, and also import other style files */
+
+/* Removes the default body margin and lets the app shell's own 100vh height / internal
+   scrolling (see layout.component.css) work without an extra page-level scrollbar
+   appearing alongside it. */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}

@@ -1,0 +1,89 @@
+<div class="page-container">
+  <h2>Records Page</h2>
+
+  <p *ngIf="errorMessage()" class="error">{{ errorMessage() }}</p>
+  <p *ngIf="loading()">Loading records...</p>
+
+  <div class="panel">
+    <h3>Saved Tasks{{ resourceFilter() ? ' for ' + resourceFilter() : ' — All Resource Persons' }}</h3>
+
+    <div class="filter-bar" *ngIf="allAssignments().length > 0">
+      <div class="form-group">
+        <label>Filter Resource Person:</label>
+        <select [ngModel]="resourceFilter()" (ngModelChange)="onResourceFilterChange($event)">
+          <option value="">All Resource Persons</option>
+          <option *ngFor="let r of resources()" [value]="r.nameId">{{ r.name }} ({{ r.nameId }})</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Filter Month:</label>
+        <select [ngModel]="filterMonth()" (ngModelChange)="onFilterMonthChange($event)">
+          <option value="">All Months</option>
+          <option *ngFor="let m of months" [value]="m">{{ m }}</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Filter Task:</label>
+        <select [ngModel]="filterTask()" (ngModelChange)="onFilterTaskChange($event)">
+          <option value="">All Tasks</option>
+          <option *ngFor="let t of taskFilterOptions()" [value]="t">{{ t }}</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Filter Year:</label>
+        <select [ngModel]="filterYear()" (ngModelChange)="onFilterYearChange($event)">
+          <option [ngValue]="null">All Years</option>
+          <option *ngFor="let y of years" [ngValue]="y">{{ y }}</option>
+        </select>
+      </div>
+
+      <button type="button" class="cancel-btn"
+              *ngIf="filterMonth() || filterTask() || filterYear() !== null || resourceFilter()"
+              (click)="clearFilters()">Clear Filters</button>
+    </div>
+
+    <table class="data-table" *ngIf="pagedAssignments().length > 0">
+      <thead>
+        <tr>
+          <th>S.No</th>
+          <th>Resource ID</th>
+          <th>Resource</th>
+          <th>Task</th>
+          <th>Task ID</th>
+          <th>Date</th>
+          <th>Hours</th>
+          <th>Remarks</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let a of pagedAssignments(); let i = index">
+          <td>{{ (currentPage() - 1) * pageSize + i + 1 }}</td>
+          <td>{{ a.resourceNameId }}</td>
+          <td>{{ a.resourceName }}</td>
+          <td>{{ a.taskName }}</td>
+          <td>{{ a.taskCode }}</td>
+          <td>{{ a.date }}</td>
+          <td>{{ a.hours }}</td>
+          <td>{{ a.remarks }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="pagination-bar" *ngIf="filteredAssignments().length > pageSize">
+      <button type="button" class="save-btn" [disabled]="currentPage() === 1" (click)="prevPage()">Previous</button>
+      <span class="page-indicator">Page {{ currentPage() }} of {{ totalPages() }}</span>
+      <button type="button" class="save-btn" [disabled]="currentPage() === totalPages()" (click)="nextPage()">Next</button>
+    </div>
+
+    <p *ngIf="!loading() && allAssignments().length === 0">No resource records saved yet.</p>
+    <p *ngIf="allAssignments().length > 0 && filteredAssignments().length === 0">No saved tasks match the selected filters.</p>
+
+    <div class="download-bar" *ngIf="allAssignments().length > 0">
+      <button type="button" class="add-btn" *ngIf="filteredAssignments().length > 0" (click)="downloadCsv()">⬇ Download CSV</button>
+      <button type="button" class="add-btn" (click)="downloadAllResourcesCsv()">⬇ Download All Resources CSV</button>
+    </div>
+  </div>
+</div>

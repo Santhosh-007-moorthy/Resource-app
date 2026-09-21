@@ -1,0 +1,29 @@
+.app-shell {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+  background: #eef3f8;
+}
+
+.app-content {
+  flex: 1;
+  min-width: 0;
+  height: 100vh;
+  padding: 30px;
+  box-sizing: border-box;
+  overflow-y: auto;
+  overflow-x: auto;
+}
+
+@media (max-width: 720px) {
+  .app-shell {
+    flex-direction: column;
+    height: auto;
+    overflow: visible;
+  }
+
+  .app-content {
+    height: auto;
+    overflow: visible;
+  }
+}
