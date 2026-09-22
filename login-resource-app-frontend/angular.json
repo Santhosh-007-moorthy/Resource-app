@@ -43,7 +43,9 @@
                   "maximumError": "8kB"
                 }
               ],
-              "outputHashing": "all"
+              "outputHashing": "all",
+              "outputPath": "dist/login-resource-app-frontend"
+
             },
             "development": {
               "optimization": false,
